@@ -2,10 +2,12 @@ import pygame
 import random
 import time
 import copy
+import os
 import sys
 
 # Initialize pygame
 pygame.init()
+pygame.mixer.init()
 
 # Define constants
 SCREEN_WIDTH, SCREEN_HEIGHT = 600, 400
@@ -15,12 +17,22 @@ BLACK = (0, 0, 0)
 FPS = 60
 marble_show_speed = 1
 cup_switch_speed = 1
+n_moves_scramble = 3
 
 # Load cup and marble images
-cup_image = pygame.image.load('cup.png')
+cup_image = pygame.image.load('images/cup.png')
 cup_image = pygame.transform.scale(cup_image, (CUP_WIDTH, CUP_HEIGHT))
-marble_image = pygame.image.load('marble.png')
+marble_image = pygame.image.load('images/marble.png')
 marble_image = pygame.transform.scale(marble_image, (40, 40))
+
+
+#sounds
+correct_sound = pygame.mixer.Sound(os.path.join('sounds', 'correct_sound.mp3'))
+worng_sound = pygame.mixer.Sound(os.path.join('sounds', 'wrong_sound.mp3'))
+intro_sound = pygame.mixer.Sound(os.path.join('sounds', 'happy-intro.mp3'))
+sh_sound = pygame.mixer.Sound(os.path.join('sounds', 'sh.mp3'))
+click_sound = pygame.mixer.Sound(os.path.join('sounds', 'click.mp3'))
+#sh_sound.set_volume(.2)
 
 
 
@@ -32,8 +44,9 @@ cup_positions = [
     [250, 200],
     [400, 200]
 ]
-text_pos = (SCREEN_WIDTH // 2 , 100)
-font = pygame.font.SysFont('Arial', 30, bold=True)
+text_pos = (SCREEN_WIDTH // 2 , 50)
+font = pygame.font.SysFont('Arial', 50, bold=True)
+font2= pygame.font.SysFont('Arial', 20, bold=True) 
 text_surface = font.render('FIND THE MARBLE!', True, (0, 0, 0))
 
 
@@ -44,6 +57,11 @@ pygame.display.set_caption("FIND THE MARBLE!")
 screen.blit(text_surface, text_surface.get_rect(center=(text_pos)))
 
 clock = pygame.time.Clock()
+
+
+
+
+
 
 def show_where_marble(marble_position=None):
     global marble_show_speed
@@ -56,7 +74,7 @@ def show_where_marble(marble_position=None):
     go_down = False
 
     for i in range(0, 1000):
-        if go_up and i % 11 == 0:
+        if go_up and i % 12 == 0:
             new_cup_positions[marble_position][1] -= marble_show_speed
         if go_down and i % 6 == 0:
             new_cup_positions[marble_position][1] += marble_show_speed
@@ -99,7 +117,7 @@ def scramble_cups(cup_order, marble_position):
     """Scramble the cups with an animation."""
     print('Scramble cups')
 
-    num_moves = 3
+    num_moves = n_moves_scramble + random.choice([-1, 0, 1])
     print('number scramble moves: ', num_moves)
 
     for n in range(1, num_moves+1):
@@ -117,13 +135,15 @@ def scramble_cups(cup_order, marble_position):
         move_cup1 = True
         move_cup2 = True
 
+        sh_sound.play()
+
         for i in range(0, 2000):
             #cup1
             if move_cup1 and new_cup_positions[idx1][0] < pos2[0]:
-                if i % 4 == 0:
+                if i % 2 == 0:
                     new_cup_positions[idx1][0] += cup_switch_speed         
             elif move_cup1 and new_cup_positions[idx1][0] > pos2[0]:
-                if i % 4 == 0:
+                if i % 2 == 0:
                     new_cup_positions[idx1][0] -= cup_switch_speed 
             else:
                  move_cup1 = False
@@ -133,10 +153,10 @@ def scramble_cups(cup_order, marble_position):
                  break
             #cup2
             if move_cup2 and new_cup_positions[idx2][0] < pos1[0]:
-                if i % 4 == 0:
+                if i % 2 == 0:
                     new_cup_positions[idx2][0] += cup_switch_speed         
             elif move_cup2 and new_cup_positions[idx2][0] > pos1[0]:
-                if i % 4 == 0:
+                if i % 2 == 0:
                     new_cup_positions[idx2][0] -= cup_switch_speed 
             else:
                  move_cup2 = False
@@ -167,9 +187,129 @@ def scramble_cups(cup_order, marble_position):
 marble_position = random.randint(0, 2)
 
 def main():
-    global marble_position, text_surface
-    running = True
+    global marble_position, text_surface, cup_switch_speed, n_moves_scramble
+    
+    
 
+    ####### Initail button Difficulty ###
+
+    #easy
+    easy_button_surface = pygame.Surface((100, 30))
+    easy_text = font2.render("EASY", True, (0, 0, 0))
+    easy_rect = easy_text.get_rect(center=(easy_button_surface.get_width()/2, easy_button_surface.get_height()/2))
+    easy_button_rect = pygame.Rect(100, 125, 150, 50)
+    #medium
+    medium_button_surface = pygame.Surface((100, 30))
+    medium_text = font2.render("MEDIUM", True, (0, 0, 0))
+    medium_rect = medium_text.get_rect(center=(medium_button_surface.get_width()/2, medium_button_surface.get_height()/2))
+    medium_button_rect = pygame.Rect(210, 125, 150, 50)
+    #hard
+    hard_button_surface = pygame.Surface((100, 30))
+    hard_text = font2.render("HARD", True, (0, 0, 0))
+    hard_rect = hard_text.get_rect(center=(hard_button_surface.get_width()/2, hard_button_surface.get_height()/2))
+    hard_button_rect = pygame.Rect(320, 125, 150, 50)
+    #insane
+    insane_button_surface = pygame.Surface((100, 30))
+    insane_text = font2.render("INSANE", True, (100, 0, 0))
+    insane_rect = insane_text.get_rect(center=(insane_button_surface.get_width()/2, insane_button_surface.get_height()/2))
+    insane_button_rect = pygame.Rect(430, 125, 150, 50)
+
+
+    intro_sound.play()
+
+    run_difficulty = True
+    while run_difficulty:
+        # Set the frame rate
+        clock.tick(60)
+        
+        # Fill the display with color
+        screen.fill(WHITE)
+
+        # Get events from the event queue
+        for event in pygame.event.get():
+            # Check for the quit event
+            if event.type == pygame.QUIT:
+                # Quit the game
+                pygame.quit()
+                sys.exit()
+
+            # Check for the mouse button down event
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                # Call the on_mouse_button_down() function
+                if easy_button_rect.collidepoint(event.pos):
+                    print("EASY")
+                    click_sound.play()
+                    cup_switch_speed = 1
+                    n_moves_scramble = 3
+                    run_difficulty = False
+                elif medium_button_rect.collidepoint(event.pos):
+                    print("MEDIUM")
+                    click_sound.play()
+                    cup_switch_speed = 2
+                    n_moves_scramble = 4
+                    run_difficulty = False
+                elif hard_button_rect.collidepoint(event.pos):
+                    print("HARD")
+                    click_sound.play()
+                    cup_switch_speed = 2
+                    n_moves_scramble = 7
+                    run_difficulty = False
+                elif insane_button_rect.collidepoint(event.pos):
+                    print("INSANE")
+                    click_sound.play()
+                    cup_switch_speed = 3
+                    n_moves_scramble = 9
+                    run_difficulty = False
+
+            # Check if the mouse is over the button. This will create the button hover effect
+            if easy_button_rect.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(easy_button_surface, (127, 255, 212), (1, 1, 100, 30))
+            else:
+                pygame.draw.rect(easy_button_surface, (255, 255, 255), (1, 1, 100, 30))
+
+            if medium_button_rect.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(medium_button_surface, (127, 255, 212), (1, 1, 100, 30))
+            else:
+                pygame.draw.rect(medium_button_surface, (255, 255, 255), (1, 1, 100, 30))
+
+            if hard_button_rect.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(hard_button_surface, (127, 255, 212), (1, 1, 100, 30))
+            else:
+                pygame.draw.rect(hard_button_surface, (255, 255, 255), (1, 1, 100, 30))
+
+            if insane_button_rect.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(insane_button_surface, 'red2', (1, 1, 100, 30))
+            else:
+                pygame.draw.rect(insane_button_surface, 'darksalmon', (1, 1, 100, 30))
+
+
+
+        # Shwo the button text
+        easy_button_surface.blit(easy_text, easy_rect)
+        medium_button_surface.blit(medium_text, medium_rect)
+        hard_button_surface.blit(hard_text, hard_rect)
+        insane_button_surface.blit(insane_text, insane_rect)
+
+        # Draw the button on the screen
+        screen.blit(easy_button_surface, (easy_button_rect.x, easy_button_rect.y))
+        screen.blit(medium_button_surface, (medium_button_rect.x, medium_button_rect.y))
+        screen.blit(hard_button_surface, (hard_button_rect.x, hard_button_rect.y))
+        screen.blit(insane_button_surface, (insane_button_rect.x, insane_button_rect.y))
+
+        for i, pos in enumerate(cup_positions):
+            screen.blit(cup_image, pos)
+            screen.blit(text_surface, text_surface.get_rect(center=(text_pos)))
+
+        # Update the game state
+        pygame.display.update()
+        ####### Initail button Difficulty ###
+
+
+
+
+
+    
+    running = True
     while running:
 
         # Initial setup: shuffle cups and hide marble
@@ -177,7 +317,7 @@ def main():
         cup_order = [0, 1, 2]  # Keep track of the cup order
         draw_scene()
 
-        pygame.time.delay(100)  # Short pause before scrambling
+        pygame.time.delay(500)  # Short pause before scrambling
         
         # Scramble cups with animation
         show_where_marble(marble_position)
@@ -199,6 +339,7 @@ def main():
                     for i, pos in enumerate(cup_positions):
                         if pos[0] < mouse_x < pos[0] + CUP_WIDTH and pos[1] < mouse_y < pos[1] + CUP_HEIGHT:
                             guess = i
+                            click_sound.play()
             if running == False:
                 break
             
@@ -214,9 +355,11 @@ def main():
 
         # Check if the player guessed correctly
         if guess == marble_position:
+            correct_sound.play()
             print("You guessed correctly!\n")
             text_surface = font.render('Correct', True, (0, 155, 0))
         else:
+            worng_sound.play()
             print("You guessed wrong!\n")
             text_surface = font.render('Wrong', True, (200, 0, 0))
 
