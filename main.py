@@ -13,7 +13,9 @@ pygame.mixer.init()
 SCREEN_WIDTH, SCREEN_HEIGHT = 600, 400
 CUP_WIDTH, CUP_HEIGHT = 120, 160
 WHITE = (255, 255, 255)
+RED = (95, 10, 10)
 BLACK = (0, 0, 0)
+BG_COL = WHITE
 FPS = 60
 marble_show_speed = 1
 cup_switch_speed = 1
@@ -32,6 +34,7 @@ worng_sound = pygame.mixer.Sound(os.path.join('sounds', 'wrong_sound.mp3'))
 intro_sound = pygame.mixer.Sound(os.path.join('sounds', 'happy-intro.mp3'))
 sh_sound = pygame.mixer.Sound(os.path.join('sounds', 'sh.mp3'))
 click_sound = pygame.mixer.Sound(os.path.join('sounds', 'click.mp3'))
+guitar_sound = pygame.mixer.Sound(os.path.join('sounds', 'guitar-riff.mp3'))
 #sh_sound.set_volume(.2)
 
 
@@ -64,7 +67,7 @@ clock = pygame.time.Clock()
 
 
 def show_where_marble(marble_position=None):
-    global marble_show_speed
+    global marble_show_speed, BG_COL
     """Show the position of the marble"""
     print('Show where marble')
 
@@ -86,7 +89,7 @@ def show_where_marble(marble_position=None):
                 go_down = False
                 break
 
-        screen.fill(WHITE)
+        screen.fill(BG_COL)
 
         screen.blit(marble_image, (cup_positions[marble_position][0] + CUP_WIDTH // 2 - 20, 200 + CUP_HEIGHT - 40))
 
@@ -100,10 +103,11 @@ def show_where_marble(marble_position=None):
         # print('cup_positions', cup_positions)
 
 def draw_scene(marble_position=None, reveal=False):
+    global BG_COL
     """Draws the cups and, if revealed, the marble under one of the cups."""
     print('Draw scene')
 
-    screen.fill(WHITE)
+    screen.fill(BG_COL)
     for i, pos in enumerate(cup_positions):
         screen.blit(cup_image, pos)
         screen.blit(text_surface, text_surface.get_rect(center=(text_pos)))
@@ -114,6 +118,7 @@ def draw_scene(marble_position=None, reveal=False):
 
 
 def scramble_cups(cup_order, marble_position):
+    global BG_COL
     """Scramble the cups with an animation."""
     print('Scramble cups')
 
@@ -166,7 +171,7 @@ def scramble_cups(cup_order, marble_position):
                  break
        
             # Draw the cups
-            screen.fill(WHITE)
+            screen.fill(BG_COL)
             screen.blit(cup_image, new_cup_positions[0])
             screen.blit(cup_image, new_cup_positions[1])
             screen.blit(cup_image, new_cup_positions[2])
@@ -219,11 +224,11 @@ def main():
 
     run_difficulty = True
     while run_difficulty:
+        global BG_COL
         # Set the frame rate
         clock.tick(60)
         
-        # Fill the display with color
-        screen.fill(WHITE)
+        
 
         # Get events from the event queue
         for event in pygame.event.get():
@@ -257,6 +262,8 @@ def main():
                 elif insane_button_rect.collidepoint(event.pos):
                     print("INSANE")
                     click_sound.play()
+                    guitar_sound.play()
+                    BG_COL = RED
                     cup_switch_speed = 3
                     n_moves_scramble = 9
                     run_difficulty = False
@@ -283,6 +290,8 @@ def main():
                 pygame.draw.rect(insane_button_surface, 'darksalmon', (1, 1, 100, 30))
 
 
+        # Fill the display with color
+        screen.fill(BG_COL)
 
         # Shwo the button text
         easy_button_surface.blit(easy_text, easy_rect)
@@ -302,6 +311,8 @@ def main():
 
         # Update the game state
         pygame.display.update()
+        if not run_difficulty:
+            pygame.time.delay(2000)
         ####### Initail button Difficulty ###
 
 
@@ -311,7 +322,6 @@ def main():
     
     running = True
     while running:
-
         # Initial setup: shuffle cups and hide marble
         
         cup_order = [0, 1, 2]  # Keep track of the cup order
